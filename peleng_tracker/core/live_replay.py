@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import re
 import threading
 import time
@@ -56,7 +57,7 @@ class LiveReplayRecorder:
             if len(selected) < 2:
                 raise ValueError("At least two configured cameras with valid stereo calibration are required")
             session_id = time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
-            base = Path(__import__("os")..getenv("PELENG_REPLAY_DIR", "replay_sessions")).resolve()
+            base = Path(os.getenv("PELENG_REPLAY_DIR", "replay_sessions")).resolve()
             root = base / session_id
             root.mkdir(parents=True, exist_ok=False)
             self._root = root
