@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Text } from '@react-three/drei'
+import { Line, OrbitControls, Text } from '@react-three/drei'
 import type { WorldTrack } from './services/VisionWebSocket'
 
 function Marker({ track }: { track: WorldTrack }) {
