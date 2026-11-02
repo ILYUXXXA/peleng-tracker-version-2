@@ -6,7 +6,7 @@ import asyncio
 
 import cv2
 import numpy as np
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from typing import Annotated
 from urllib.parse import urlsplit, urlunsplit
 
@@ -186,6 +186,27 @@ async def publish_phone_frame(
 @router.get("/phone/{camera_id}/status")
 async def phone_camera_status(camera_id: int) -> dict[str, object]:
     return phone_frames.status(camera_id)
+
+
+@router.get("/phone/{camera_id}/snapshot")
+async def phone_camera_snapshot(camera_id: int) -> Response:
+    """Return the newest full-resolution phone frame for calibration capture."""
+    packet = phone_frames.get(camera_id)
+    if packet is None:
+        raise HTTPException(status_code=404, detail=f"camera {camera_id} has not published a frame")
+    ok, encoded = cv2.imencode(".jpg", packet.frame, [cv2.IMWRITE_JPEG_QUALITY, 94])
+    if not ok:
+        raise HTTPException(status_code=500, detail="could not encode camera snapshot")
+    return Response(
+        content=encoded.tobytes(),
+        media_type="image/jpeg",
+        headers={
+            "Cache-Control": "no-store",
+            "X-Camera-Id": str(camera_id),
+            "X-Frame-Sequence": str(packet.sequence),
+            "X-Captured-At": str(packet.captured_at),
+        },
+    )
 
 
 @router.get("/phone/mjpeg")
