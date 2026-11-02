@@ -1,0 +1,10 @@
+# Merge this list into hackathon.yaml. Keep the real file local and ignored.
+cameras:
+  - id: 0
+    name: camera-left
+    url: ${PELENG_CAMERA_0_URL}
+    enabled: true
+  - id: 1
+    name: camera-right
+    url: ${PELENG_CAMERA_1_URL}
+    enabled: true

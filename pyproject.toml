@@ -1,0 +1,194 @@
+[build-system]
+requires = ["setuptools>=69.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+prerelease = "allow"
+
+[project]
+name = "peleng-tracker"
+version = "0.2.0"
+description = "Hackathon prototype for multi-camera detection, tracking and 3D localization"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Multimedia :: Video",
+
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+keywords = ["computer-vision", "tracking", "multi-camera", "webrtc", "rtsp", "object-detection"]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "aiortc>=1.15.0",
+    "aiofiles>=23.2.1",
+    "numpy>=1.24.0",
+    "opencv-python>=4.8.0",
+    "pydantic>=2.5.0",
+    "python-multipart>=0.0.6",
+    "websockets>=12.0",
+    "torch>=2.0.0",
+    "torchvision>=0.15.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "python-dotenv>=1.0.0",
+    "ultralytics>=8.4.189",
+    "lap>=0.5.12",
+    "PyYAML>=6.0",
+    "ezc3d>=1.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.6.0",
+    "mypy>=1.0.0",
+    "bandit>=1.7.0",
+]
+
+[project.scripts]
+peleng-tracker = "peleng_tracker.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["peleng_tracker*"]
+exclude = ["tests*", "docs*", "examples*"]
+
+[tool.setuptools.package-data]
+peleng_tracker = [
+    "static/**/*",
+    "templates/**/*",
+    "**/*.json",
+    "**/*.yaml",
+    "**/*.yml",
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = false  # Keep false for gradual typing
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_equality = true
+ignore_missing_imports = true
+show_error_codes = true
+exclude = [
+    "peleng_tracker/static/",
+    "build/",
+    "dist/",
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --strict-markers"
+testpaths = [
+    "tests",
+]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "RET",    # flake8-return
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "ERA",    # eradicate (commented code)
+    "PL",     # pylint
+    "PERF",   # perflint
+]
+
+ignore = [
+    "E501",   # line-too-long (handled by formatter)
+    "E402",   # module-level-import-not-at-top-of-file
+    "PLR0913", # too-many-arguments
+    "PLR0912", # too-many-branches
+    "PLR0915", # too-many-statements
+    "PLR2004", # magic-value-comparison
+    "ARG002",  # unused-method-argument
+    "PLC0415", # intentional lazy imports for heavyweight CV/runtime adapters
+    "PLW0603", # FastAPI router dependency injection is set during app startup
+    "ERA001",  # commented-out-code (allow some)
+]
+
+[tool.ruff.lint.isort]
+force-single-line = false
+known-first-party = ["peleng_tracker"]
+
+[tool.ruff.lint.pylint]
+max-args = 10
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+exclude = [
+    ".git",
+    "__pycache__",
+    "dist",
+    "build",
+    "peleng_tracker/static",
+    "*.egg-info",
+    ".venv",
+    ".mypy_cache",
+    ".pytest_cache",
+]
+
+[tool.coverage.run]
+source = ["peleng_tracker"]
+omit = [
+    "*/tests/*",
+    "*/static/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "peleng_tracker/static"]
+skips = [
+    "B101",  # assert_used
+    "B601",  # paramiko_calls
+    "B602",  # subprocess_popen_with_shell_equals_true (we need some shell calls)
+    "B603",  # subprocess_without_shell_equals_true (secure subprocess calls)
+    "B607",  # start_process_with_partial_path (safe npm calls)
+]

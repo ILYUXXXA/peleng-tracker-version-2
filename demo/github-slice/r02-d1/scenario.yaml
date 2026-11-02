@@ -1,0 +1,42 @@
+schema_version: 1
+id: r02-d1
+title: "DPJAIT R02_D1 \xB7 one drone \xB7 four cameras"
+source: DPJAIT real measurements
+fps: 25.0
+duration_s: 60.56
+object_id: drone-1
+observation_source: DPJAIT YOLOv5 bounding-box centers
+cameras:
+- id: 0
+  name: "cam_1 \xB7 55260362"
+  video: camera-0.mp4
+- id: 1
+  name: "cam_2 \xB7 60881257"
+  video: camera-1.mp4
+- id: 2
+  name: "cam_3 \xB7 61016180"
+  video: camera-2.mp4
+- id: 3
+  name: "cam_4 \xB7 61920488"
+  video: camera-3.mp4
+calibration: calibration.yaml
+observations: observations.csv
+ground_truth: ground-truth.csv
+metadata:
+  sequence: R02_D1
+  source_camera_names:
+  - '55260362'
+  - '60881257'
+  - '61016180'
+  - '61920488'
+  source_distortion_coefficients_applied: false
+  vicon_rate_hz: 100.0
+  vicon_offset_samples: -3
+  vicon_marker_labels:
+  - Dron1
+  - Dron4
+  - Dron2
+  - Dron3
+  ground_truth_definition: 'visual center: valid Vicon-marker centroid shifted 100
+    mm vertically down'
+  visual_center_below_markers_m: 0.1

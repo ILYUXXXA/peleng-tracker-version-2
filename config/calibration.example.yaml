@@ -1,0 +1,17 @@
+coordinate_system: right-handed
+units: meters
+cameras:
+  0:
+    image_size: [1280, 720]
+    camera_matrix: [[900, 0, 640], [0, 900, 360], [0, 0, 1]]
+    distortion_coefficients: [0, 0, 0, 0, 0]
+    camera_forward_axis: positive_z
+    rotation_world_to_camera: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    translation_world_to_camera: [0, 0, 0]
+  1:
+    image_size: [1280, 720]
+    camera_matrix: [[900, 0, 640], [0, 900, 360], [0, 0, 1]]
+    distortion_coefficients: [0, 0, 0, 0, 0]
+    camera_forward_axis: positive_z
+    rotation_world_to_camera: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    translation_world_to_camera: [-1, 0, 0]

@@ -1,0 +1,8 @@
+vision:
+  detector: {backend: ultralytics, weights: yolo26n.pt, confidence: 0.25, iou: 0.7, device: auto, image_size: 640}
+  tracker: {backend: botsort}
+  geometry: {mode: auto, calibration_file: config/calibration.yaml, max_sync_skew_ms: 50, max_reprojection_error_px: 5, max_ground_distance_m: 1.5}
+cameras:
+  - {id: 0, name: offline-left, url: "rtsp://127.0.0.1:8554/camera0", enabled: true}
+  - {id: 1, name: offline-right, url: "rtsp://127.0.0.1:8554/camera1", enabled: true}
+server: {host: 127.0.0.1, port: 8000, open_browser: false}
