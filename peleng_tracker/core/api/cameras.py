@@ -175,6 +175,7 @@ async def publish_phone_frame(
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     stream_combiner_manager.register_phone_camera(camera_id, name)
+    await stream_combiner_manager.process_phone_frames()
     return {
         "camera_id": camera_id,
         "sequence": packet.sequence,
