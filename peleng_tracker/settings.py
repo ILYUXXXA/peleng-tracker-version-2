@@ -14,11 +14,12 @@ from pydantic import BaseModel, Field, field_validator
 class DetectorSettings(BaseModel):
     backend: Literal["ultralytics"] = "ultralytics"
     weights: str = "yolo26n.pt"
-    confidence: float = Field(default=0.25, ge=0.0, le=1.0)
-    iou: float = Field(default=0.7, ge=0.0, le=1.0)
+    # COCO class 0 is person. Default to people-only instead of every COCO class.
+    confidence: float = Field(default=0.4, ge=0.0, le=1.0)
+    iou: float = Field(default=0.6, ge=0.0, le=1.0)
     device: str = "auto"
-    image_size: int = Field(default=640, ge=32)
-    class_ids: list[int] | None = None
+    image_size: int = Field(default=960, ge=32)
+    class_ids: list[int] | None = Field(default_factory=lambda: [0])
 
 
 class TrackerSettings(BaseModel):
