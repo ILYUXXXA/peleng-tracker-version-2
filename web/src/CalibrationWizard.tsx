@@ -13,6 +13,9 @@ export function CalibrationWizard() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [result, setResult] = useState<CalibrationResult | null>(null)
+  const [captured0, setCaptured0] = useState<File[]>([])
+  const [captured1, setCaptured1] = useState<File[]>([])
+  const [capturing, setCapturing] = useState(false)
 
   const refresh = async () => {
     const response = await fetch('/api/calibration/3d')
@@ -22,11 +25,37 @@ export function CalibrationWizard() {
   }
   useEffect(() => { void refresh().catch(error => setMessage(error.message)) }, [])
 
+  const capturePair = async () => {
+    setCapturing(true); setMessage('Снимаем синхронную пару кадров…')
+    try {
+      const [response0, response1] = await Promise.all([
+        fetch(`/api/cameras/phone/${camera0}/snapshot`, { cache: 'no-store' }),
+        fetch(`/api/cameras/phone/${camera1}/snapshot`, { cache: 'no-store' }),
+      ])
+      if (!response0.ok || !response1.ok) throw new Error('Обе камеры должны быть подключены и передавать видео.')
+      const time0 = Number(response0.headers.get('X-Captured-At'))
+      const time1 = Number(response1.headers.get('X-Captured-At'))
+      const skewMs = Math.abs(time0 - time1) * 1000
+      if (!Number.isFinite(skewMs) || skewMs > 150) throw new Error(`Кадры камер различаются на ${skewMs.toFixed(0)} мс. Повторите захват пары.`)
+      const nextIndex = Math.max(captured0.length, captured1.length) + 1
+      const [blob0, blob1] = await Promise.all([response0.blob(), response1.blob()])
+      setCaptured0(current => [...current, new File([blob0], `camera-${camera0}-${nextIndex}.jpg`, { type: 'image/jpeg' })])
+      setCaptured1(current => [...current, new File([blob1], `camera-${camera1}-${nextIndex}.jpg`, { type: 'image/jpeg' })])
+      setMessage(`Сохранена пара ${nextIndex}. Поменяйте положение шахматной доски и снимите следующую.`)
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Не удалось снять пару кадров') }
+    finally { setCapturing(false) }
+  }
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = event.currentTarget
     const data = new FormData(form)
-    if ((data.getAll('camera0_images') as File[]).length < 12 || (data.getAll('camera1_images') as File[]).length < 12) {
+    const files0 = (data.getAll('camera0_images') as File[]).filter(file => file.size > 0)
+    const files1 = (data.getAll('camera1_images') as File[]).filter(file => file.size > 0)
+    data.delete('camera0_images'); data.delete('camera1_images')
+    for (const file of [...files0, ...captured0]) data.append('camera0_images', file)
+    for (const file of [...files1, ...captured1]) data.append('camera1_images', file)
+    if (files0.length + captured0.length < 12 || files1.length + captured1.length < 12) {
       setMessage('Нужно минимум 12 пар изображений — одинаковое число файлов с обеих камер.')
       return
     }
@@ -37,7 +66,7 @@ export function CalibrationWizard() {
       if (!response.ok) throw new Error(payload.detail ?? 'Калибровка завершилась ошибкой')
       setResult(payload); if (payload.status) setStatus(payload.status)
       setMessage('Калибровка сохранена. Теперь не перемещайте телефоны.')
-      form.reset()
+      setCaptured0([]); setCaptured1([]); form.reset()
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Ошибка калибровки') }
     finally { setBusy(false) }
   }
@@ -62,9 +91,9 @@ export function CalibrationWizard() {
         <label>Внутренние углы по высоте<input name="rows" type="number" min="4" max="20" value={rows} onChange={event => setRows(event.target.value)} required /></label>
       </div>
       <label>Сторона клетки, метры<input name="square_size_m" type="number" min="0.002" max="0.5" step="0.001" value={square} onChange={event => setSquare(event.target.value)} required /></label>
-      <label>Кадры камеры A — минимум 12<input name="camera0_images" type="file" accept="image/*" multiple required /></label>
-      <label>Соответствующие кадры камеры B — в том же порядке<input name="camera1_images" type="file" accept="image/*" multiple required /></label>
-      <button className="primary" type="submit" disabled={busy}>{busy ? 'Калибруем…' : 'Вычислить и сохранить калибровку'}</button>
+      <label>Дополнительные файлы камеры A<input name="camera0_images" type="file" accept="image/*" multiple /></label>
+      <label>Дополнительные файлы камеры B в том же порядке<input name="camera1_images" type="file" accept="image/*" multiple /></label>
+      <button className="secondary" type="button" disabled={busy || capturing || camera0 === camera1} onClick={capturePair}>Снять синхронную пару с телефонов ({captured0.length}/12)</button>\n      <p className="hint">Можно снимать пары прямо из работающих видеопотоков. После каждой пары перемещайте доску; нужно минимум 12 разных поз. Текущие кадры должны отличаться по времени не более чем на 150 мс.</p>\n      <button className="primary" type="submit" disabled={busy}>{busy ? 'Калибруем…' : 'Вычислить и сохранить калибровку'}</button>
     </form>
     {message && <p className="notice" aria-live="polite">{message}</p>}
     {result && <dl className="calibration-quality">
