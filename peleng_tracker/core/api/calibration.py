@@ -115,7 +115,7 @@ async def calibrate_stereo_checkerboard(
     rms0, matrix0, distortion0, _, _ = cv2.calibrateCamera(object_points, image_points0, image_size, None, None, flags=flags)
     rms1, matrix1, distortion1, _, _ = cv2.calibrateCamera(object_points, image_points1, image_size, None, None, flags=flags)
     stereo_flags = cv2.CALIB_FIX_INTRINSIC
-    stereo_rms, matrix0, distortion0, matrix1, distortion1, rotation, translation, essential, fundamental = cv2.stereoCalibrate(
+    stereo_rms, matrix0, distortion0, matrix1, distortion1, rotation, translation, _essential, _fundamental = cv2.stereoCalibrate(
         object_points, image_points0, image_points1, matrix0, distortion0, matrix1, distortion1,
         image_size, criteria=criteria, flags=stereo_flags,
     )
