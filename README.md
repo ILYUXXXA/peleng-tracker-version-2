@@ -21,6 +21,31 @@ cd web && npm ci && npm run build && cd ..
 
 Dashboard откроется на `http://127.0.0.1:8000`. При первом запуске Ultralytics может скачать выбранные веса. Для запуска vision нажмите `Start vision` после подключения потоков.
 
+### Windows + Tailscale
+
+Откройте PowerShell в папке проекта. Установите зависимости один раз, затем запустите сервер:
+
+```powershell
+cd D:\peleng-tracker-version-2
+uv sync
+uv run peleng-tracker run --config config/hackathon.yaml
+```
+
+Оставьте это окно открытым. В **PowerShell от имени администратора** включите приватный HTTPS-доступ через Tailscale Serve и проверьте его адрес:
+
+```powershell
+& "$env:ProgramFiles\Tailscale\tailscale.exe" serve --bg 8000
+& "$env:ProgramFiles\Tailscale\tailscale.exe" serve status
+```
+
+Откройте выведенный URL вида `https://имя-устройства.<tailnet>.ts.net` на компьютере. На телефоне, подключённом к тому же tailnet, откройте этот же адрес с `/phone` в конце, разрешите доступ к камере и нажмите кнопку запуска. Вернитесь на дашборд, при необходимости нажмите `Start vision`; подключённые камеры появятся в объединённом потоке. Tailscale Serve доступен только устройствам вашего tailnet и требует HTTPS в tailnet. Подробнее: [Tailscale Serve](https://tailscale.com/docs/reference/tailscale-cli/serve).
+
+Чтобы остановить сервер, нажмите `Ctrl+C` в окне с `uv`. Чтобы отключить HTTPS-прокси Tailscale, выполните в PowerShell администратора:
+
+```powershell
+& "$env:ProgramFiles\Tailscale\tailscale.exe" serve off
+```
+
 ## Камеры
 
 Скопируйте `config/hackathon.example.yaml` в локальный `config/hackathon.local.yaml` и добавьте камеры. RTSP URL рекомендуется передавать через environment variables:

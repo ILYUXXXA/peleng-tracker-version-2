@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+
+import cv2
+import numpy as np
+from fastapi.responses import StreamingResponse
 from typing import Annotated
 from urllib.parse import urlsplit, urlunsplit
 
@@ -181,6 +186,53 @@ async def publish_phone_frame(
 @router.get("/phone/{camera_id}/status")
 async def phone_camera_status(camera_id: int) -> dict[str, object]:
     return phone_frames.status(camera_id)
+
+
+@router.get("/phone/mjpeg")
+async def phone_cameras_mjpeg() -> StreamingResponse:
+    """Serve phone camera frames over HTTP; unlike WebRTC this works through HTTPS proxies."""
+    async def generate():
+        last_sequences: dict[int, int] = {}
+        while True:
+            streams = [
+                item for item in ServerConfig.get_enabled_streams()
+                if str(item.get("url", "")).startswith("phone://")
+            ]
+            if streams:
+                individual_width, individual_height = ServerConfig.get_individual_resolution()
+                columns, rows = ServerConfig.get_layout(len(streams))
+                canvas = np.zeros(
+                    (rows * individual_height, columns * individual_width, 3),
+                    dtype=np.uint8,
+                )
+                changed = False
+                for index, stream in enumerate(streams):
+                    camera_id = int(stream["id"])
+                    packet = phone_frames.get(camera_id)
+                    if packet is None:
+                        continue
+                    changed = changed or last_sequences.get(camera_id) != packet.sequence
+                    frame = cv2.resize(packet.frame, (individual_width, individual_height))
+                    x = (index % columns) * individual_width
+                    y = (index // columns) * individual_height
+                    canvas[y:y + individual_height, x:x + individual_width] = frame
+                    last_sequences[camera_id] = packet.sequence
+                if changed:
+                    ok, encoded = cv2.imencode(".jpg", canvas, [cv2.IMWRITE_JPEG_QUALITY, 80])
+                    if ok:
+                        yield (
+                            b"--frame\r\nContent-Type: image/jpeg\r\n"
+                            b"Cache-Control: no-cache\r\n\r\n"
+                            + encoded.tobytes()
+                            + b"\r\n"
+                        )
+            await asyncio.sleep(0.05)
+
+    return StreamingResponse(
+        generate(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"},
+    )
 
 
 @router.get("/{camera_id}")
