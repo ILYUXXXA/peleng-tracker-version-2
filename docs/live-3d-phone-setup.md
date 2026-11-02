@@ -9,9 +9,18 @@
 
 ## Calibration requirement
 
-Two phone video feeds are not enough to infer metric 3D camera geometry automatically. Each camera needs intrinsic parameters and a shared world coordinate frame (extrinsic parameters). The current `POST /api/calibration/3d` endpoint validates and loads a calibration document; it does not estimate one from phone footage.
+Two phone video feeds are not enough to infer metric 3D camera geometry automatically. Each camera needs intrinsic parameters and a shared world coordinate frame (extrinsic parameters). The Settings tab now includes a guided stereo checkerboard wizard. It uploads paired still images to `POST /api/calibration/3d/checkerboard`, estimates both camera intrinsics and the relative pose, and saves a metric calibration. The existing `POST /api/calibration/3d` endpoint remains available for importing a previously computed calibration document.
 
-For a real setup, calibrate both phones with a printed checkerboard or ChArUco board using the same board dimensions, fixed focus/zoom, and a rigid camera placement. Estimate intrinsics for each phone and stereo extrinsics for the pair, then provide the resulting camera matrices, distortion coefficients, rotations and translations in the calibration YAML. Recalibrate if camera position, zoom, focus or resolution changes.
+For a real setup:
+
+1. Print a chessboard with 9 × 6 **inner corners**. Measure one square edge accurately and enter it in metres.
+2. Rigidly mount both phones. Lock focus and zoom, use the same fixed resolution, and avoid moving either phone after calibration.
+3. Capture at least 12 corresponding image pairs. In each pair, the board must be in the same pose in both cameras. Vary distance, tilt and image position across pairs; keep the full board visible and sharply focused.
+4. In Settings → Calibration, set the camera IDs, board dimensions and square size. Select the camera-A files and camera-B files in matching order, then start calibration.
+5. The endpoint rejects fewer than 10 usable pairs or stereo RMS above 3 px. Prefer RMS around 1–2 px or lower. If rejected, capture more varied, sharper pairs.
+6. After success, keep both phones fixed. Camera A defines the world origin; the measured baseline is reported in metres. Recalibrate after moving a phone, changing zoom/focus or changing resolution.
+
+The wizard calibrates a two-camera stereo pair. Additional cameras require their own stereo calibration into the same world coordinate frame; do not simply append a third independent pair.
 
 ## Verification
 
@@ -25,4 +34,4 @@ npm run lint
 npm run build
 ```
 
-A valid calibration status alone is not a substitute for checking reprojection error and confirming that both cameras observe the same moving object at synchronized timestamps.
+A valid calibration status alone is not a substitute for checking reprojection error and confirming that both cameras observe the same moving object at synchronized timestamps. 3D positions are only shown when triangulation succeeds; single-camera tracks remain 2D and are not fabricated into depth.
