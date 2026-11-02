@@ -114,7 +114,7 @@ function DesktopApp() {
     return { columns, rows }
   }, [visibleCameraIds.length])
   const selectedClassIds = useMemo(
-    () => [...new Set(classIds.split(',').map(value => Number(value.trim())).filter(Number.isInteger))],
+    () => [...new Set(classIds.split(',').map(value => value.trim()).filter(value => value !== '').map(Number).filter(Number.isInteger))],
     [classIds],
   )
   const visibleWorldTracks = useMemo(() => {
@@ -124,14 +124,16 @@ function DesktopApp() {
 
   const addClass = (classId: number) => {
     setClassIds(current => {
-      const ids = current.split(',').map(value => Number(value.trim())).filter(Number.isInteger)
+      const ids = current.split(',').map(value => value.trim()).filter(value => value !== '').map(Number).filter(Number.isInteger)
       return [...new Set([...ids, classId])].join(', ')
     })
   }
 
   const removeClass = (classId: number) => {
     setClassIds(current => current.split(',')
-      .map(value => Number(value.trim()))
+      .map(value => value.trim())
+      .filter(value => value !== '')
+      .map(Number)
       .filter(value => Number.isInteger(value) && value !== classId)
       .join(', '))
   }
