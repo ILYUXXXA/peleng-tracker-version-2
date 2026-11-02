@@ -13,7 +13,7 @@ Two phone video feeds are not enough to infer metric 3D camera geometry automati
 
 For a real setup:
 
-1. Print a chessboard with 9 × 6 **inner corners**. Measure one square edge accurately and enter it in metres.
+1. Print [the included 9 × 6 inner-corner checkerboard](checkerboard-9x6-50mm.svg) at **100% / actual size** (do not fit to page). It has 50 mm squares; measure one square edge after printing and enter the measured value in metres.
 2. Rigidly mount both phones. Lock focus and zoom, use the same fixed resolution, and avoid moving either phone after calibration.
 3. Capture at least 12 corresponding image pairs. In each pair, the board must be in the same pose in both cameras. Vary distance, tilt and image position across pairs; keep the full board visible and sharply focused.
 4. In Settings → Calibration, set the camera IDs, board dimensions and square size. Select the camera-A files and camera-B files in matching order, then start calibration.
