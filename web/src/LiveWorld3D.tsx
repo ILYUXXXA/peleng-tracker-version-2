@@ -7,7 +7,8 @@ function Marker({ track }: { track: WorldTrack }) {
   const [x, y, z] = track.position_xyz_m
   const trail = track.trajectory.map(point => [point[1], point[3], -point[2]] as [number, number, number])
   return <group position={[x, z, -y]}>
-    {trail.length > 1 && <Line points={trail} color={track.is_target ? '#ffca63' : '#3985a5'} lineWidth={track.is_target ? 2.5 : 1.2} transparent opacity={0.72} />}\n    <mesh>
+    {trail.length > 1 && <Line points={trail} color={track.is_target ? '#ffca63' : '#3985a5'} lineWidth={track.is_target ? 2.5 : 1.2} transparent opacity={0.72} />}
+    <mesh>
       <sphereGeometry args={[track.is_target ? 0.14 : 0.09, 20, 16]} />
       <meshStandardMaterial color={track.is_target ? '#ffca63' : '#69d7ff'} emissive={track.is_target ? '#805000' : '#12445a'} emissiveIntensity={0.5} />
     </mesh>
