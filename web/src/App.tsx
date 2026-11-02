@@ -1,7 +1,9 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { VisionWebSocketService, type VisionMetadata } from './services/VisionWebSocket'
 import { PhonePublisher } from './PhonePublisher'
+import { LiveWorld3D } from './LiveWorld3D'
+import { CalibrationWizard } from './CalibrationWizard'
 import { COCO_CLASSES } from './cocoClasses'
 
 const ReplayEditor = lazy(() => import('./ReplayEditor'))
@@ -48,7 +50,7 @@ function DesktopApp() {
   const [screen, setScreen] = useState<Screen>('dashboard')
   const [status, setStatus] = useState<Status>(emptyStatus)
   const [metadata, setMetadata] = useState<VisionMetadata | null>(null)
-  const [classIds, setClassIds] = useState('0')
+  const [classIds, setClassIds] = useState('')
   const [weights, setWeights] = useState('yolo26n.pt')
   const [tracker, setTracker] = useState('botsort')
   const [notice, setNotice] = useState('')
@@ -112,7 +114,7 @@ function DesktopApp() {
     return { columns, rows }
   }, [visibleCameraIds.length])
   const selectedClassIds = useMemo(
-    () => [...new Set(classIds.split(',').map(value => Number(value.trim())).filter(Number.isInteger))],
+    () => [...new Set(classIds.split(',').map(value => value.trim()).filter(value => value !== '').map(Number).filter(Number.isInteger))],
     [classIds],
   )
   const visibleWorldTracks = useMemo(() => {
@@ -122,14 +124,16 @@ function DesktopApp() {
 
   const addClass = (classId: number) => {
     setClassIds(current => {
-      const ids = current.split(',').map(value => Number(value.trim())).filter(Number.isInteger)
+      const ids = current.split(',').map(value => value.trim()).filter(value => value !== '').map(Number).filter(Number.isInteger)
       return [...new Set([...ids, classId])].join(', ')
     })
   }
 
   const removeClass = (classId: number) => {
     setClassIds(current => current.split(',')
-      .map(value => Number(value.trim()))
+      .map(value => value.trim())
+      .filter(value => value !== '')
+      .map(Number)
       .filter(value => Number.isInteger(value) && value !== classId)
       .join(', '))
   }
@@ -152,7 +156,7 @@ function DesktopApp() {
   const selectClasses = async () => {
     const ids = selectedClassIds
     if (!ids.length) {
-      setTargetNotice('Укажите хотя бы один числовой class ID.')
+      setTargetNotice('Все классы уже обнаруживаются. Выберите конкретный класс только если хотите ограничить сопровождение.')
       return
     }
     const response = await fetch('/api/vision/target', {
@@ -270,6 +274,7 @@ function DesktopApp() {
           <section className="panel"><p className="eyebrow">Target</p><h2>{status.target.state}</h2>
             {status.target.target?.mode === 'track' && <p className="target-summary">Track #{status.target.target.track_id} · camera {status.target.target.camera_id}{status.target.target.global_id ? ` · global ${status.target.target.global_id}` : ''}</p>}
             {status.target.target?.mode === 'class' && <p className="target-summary">COCO class: {status.target.target.class_ids?.join(', ')}</p>}
+            <p className="hint">По умолчанию обнаруживаются все классы модели. Выбор класса ниже нужен только для фильтрации цели.</p>
             <label>Class ID вручную<input value={classIds} onChange={event => setClassIds(event.target.value)} placeholder="Например: 0, 2, 7" /></label>
             <label>Добавить стандартный COCO-класс
               <select value="" onChange={event => { if (event.target.value) addClass(Number(event.target.value)) }}>
@@ -296,7 +301,7 @@ function DesktopApp() {
         <section className="panel world-map"><div className="section-title"><div><p className="eyebrow">Meters · right-handed</p><h2>World View</h2></div>
           {metadata && <small>local {Object.entries(metadata.association_diagnostics.local_tracks_by_camera).map(([cameraId, count]) => `c${cameraId}: ${count}`).join(' · ')} · fused {metadata.association_diagnostics.fused_world_tracks} · fallback {metadata.association_diagnostics.single_camera_fallback_tracks}</small>}
         </div>
-          <div className="grid-map">{visibleWorldTracks.map(track => track.position_xyz_m && <button key={track.global_id} className={track.is_target ? 'world-dot target' : 'world-dot'} style={{ left: `${50 + track.position_xyz_m[0] * 5}%`, top: `${50 - track.position_xyz_m[1] * 5}%` }} title={track.global_id} />)}</div>
+          <LiveWorld3D tracks={visibleWorldTracks} calibrationValid={status.calibration.valid} />
         </section>
         <section className="panel world-cards">{visibleWorldTracks.map(track => <article key={track.global_id}><strong>{track.global_id}</strong><span>{track.class_name}</span><code>{track.position_xyz_m ? track.position_xyz_m.map(v => v.toFixed(2)).join(', ') : 'unavailable'}</code><small>{track.position_status} · {track.source_track_keys.join(' + ')}</small></article>)}{!visibleWorldTracks.length && <p className="muted">Нет мировых треков.</p>}</section>
       </main>}
@@ -309,9 +314,7 @@ function DesktopApp() {
           <label>Tracker<select value={tracker} onChange={event => setTracker(event.target.value)}><option value="deepsort">DeepSORT</option><option value="botsort">BoT-SORT</option></select></label>
           <button className="primary" onClick={restart}>Проверить и применить</button>{notice && <p className="notice">{notice}</p>}
         </section>
-        <section className="panel"><p className="eyebrow">Calibration</p><h2>{status.calibration.valid ? 'ready' : 'unavailable'}</h2><p>{status.calibration.camera_ids.length} откалиброванных камер</p>
-          <label>Calibration YAML / JSON<input type="file" accept=".yaml,.yml,.json" onChange={async event => { const file = event.target.files?.[0]; if (!file) return; await fetch('/api/calibration/3d', { method: 'POST', headers: { 'Content-Type': file.name.endsWith('.json') ? 'application/json' : 'application/yaml' }, body: await file.text() }); await refreshStatus() }} /></label>
-        </section>
+        <CalibrationWizard />
         <section className="panel camera-settings"><p className="eyebrow">Runtime source</p><h2>Добавить камеру</h2>
           <p className="muted">Поддерживаются RTSP, RTSPS, RTMP и HTTP/MJPEG. Источник действует до перезапуска сервера.</p>
           <div className="camera-fields">
