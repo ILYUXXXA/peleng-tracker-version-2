@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 
 type CalibrationState = { status: { valid: boolean; camera_ids: number[] }; calibration?: unknown }
 type CalibrationResult = { quality: { usable_pairs: number; stereo_rms_px: number; camera0_rms_px: number; camera1_rms_px: number; baseline_m: number; image_size: number[] }; note: string }
@@ -22,7 +22,7 @@ export function CalibrationWizard() {
   }
   useEffect(() => { void refresh().catch(error => setMessage(error.message)) }, [])
 
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = event.currentTarget
     const data = new FormData(form)
