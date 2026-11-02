@@ -194,6 +194,8 @@ async def phone_camera_snapshot(camera_id: int) -> Response:
     packet = phone_frames.get(camera_id)
     if packet is None:
         raise HTTPException(status_code=404, detail=f"camera {camera_id} has not published a frame")
+    if (asyncio.get_running_loop().time() - packet.captured_at) > 2.0:
+        raise HTTPException(status_code=409, detail=f"camera {camera_id} frame is stale; keep the phone publisher running")
     ok, encoded = cv2.imencode(".jpg", packet.frame, [cv2.IMWRITE_JPEG_QUALITY, 94])
     if not ok:
         raise HTTPException(status_code=500, detail="could not encode camera snapshot")
