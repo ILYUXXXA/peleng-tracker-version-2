@@ -17,13 +17,16 @@ export function CalibrationWizard() {
   const [captured1, setCaptured1] = useState<File[]>([])
   const [capturing, setCapturing] = useState(false)
 
-  const refresh = async () => {
-    const response = await fetch('/api/calibration/3d')
-    if (!response.ok) throw new Error('Не удалось прочитать состояние калибровки')
-    const data = await response.json() as CalibrationState
-    setStatus(data.status)
-  }
-  useEffect(() => { void refresh().catch(error => setMessage(error.message)) }, [])
+  useEffect(() => {
+    let active = true
+    fetch('/api/calibration/3d').then(async response => {
+      if (!response.ok) throw new Error('Не удалось прочитать состояние калибровки')
+      return response.json() as Promise<CalibrationState>
+    }).then(data => { if (active) setStatus(data.status) }).catch(error => {
+      if (active) setMessage(error instanceof Error ? error.message : 'Ошибка состояния калибровки')
+    })
+    return () => { active = false }
+  }, [])
 
   const capturePair = async () => {
     setCapturing(true); setMessage('Снимаем синхронную пару кадров…')
