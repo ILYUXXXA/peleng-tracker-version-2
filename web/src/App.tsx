@@ -3,6 +3,7 @@ import './App.css'
 import { VisionWebSocketService, type VisionMetadata } from './services/VisionWebSocket'
 import { PhonePublisher } from './PhonePublisher'
 import { LiveWorld3D } from './LiveWorld3D'
+import { CalibrationWizard } from './CalibrationWizard'
 import { COCO_CLASSES } from './cocoClasses'
 
 const ReplayEditor = lazy(() => import('./ReplayEditor'))
@@ -311,9 +312,7 @@ function DesktopApp() {
           <label>Tracker<select value={tracker} onChange={event => setTracker(event.target.value)}><option value="deepsort">DeepSORT</option><option value="botsort">BoT-SORT</option></select></label>
           <button className="primary" onClick={restart}>Проверить и применить</button>{notice && <p className="notice">{notice}</p>}
         </section>
-        <section className="panel"><p className="eyebrow">Calibration</p><h2>{status.calibration.valid ? 'ready' : 'unavailable'}</h2><p>{status.calibration.camera_ids.length} откалиброванных камер</p>
-          <label>Calibration YAML / JSON<input type="file" accept=".yaml,.yml,.json" onChange={async event => { const file = event.target.files?.[0]; if (!file) return; await fetch('/api/calibration/3d', { method: 'POST', headers: { 'Content-Type': file.name.endsWith('.json') ? 'application/json' : 'application/yaml' }, body: await file.text() }); await refreshStatus() }} /></label>
-        </section>
+        <CalibrationWizard />
         <section className="panel camera-settings"><p className="eyebrow">Runtime source</p><h2>Добавить камеру</h2>
           <p className="muted">Поддерживаются RTSP, RTSPS, RTMP и HTTP/MJPEG. Источник действует до перезапуска сервера.</p>
           <div className="camera-fields">
