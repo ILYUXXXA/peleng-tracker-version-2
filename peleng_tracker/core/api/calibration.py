@@ -59,7 +59,7 @@ def _decode_image(upload: UploadFile) -> np.ndarray:
     return image
 
 
-@router.post("/3d/charuco")
+@router.post("/3d/checkerboard")
 async def calibrate_stereo_checkerboard(
     camera0_images: list[UploadFile] = File(...),
     camera1_images: list[UploadFile] = File(...),
@@ -111,7 +111,7 @@ async def calibrate_stereo_checkerboard(
     if len(object_points) < 10:
         raise HTTPException(status_code=422, detail=f"only {len(object_points)} usable pairs; need at least 10 with the full board visible in both images")
     assert image_size is not None
-    flags = cv2.CALIB_RATIONAL_MODEL
+    flags = 0
     rms0, matrix0, distortion0, _, _ = cv2.calibrateCamera(object_points, image_points0, image_size, None, None, flags=flags)
     rms1, matrix1, distortion1, _, _ = cv2.calibrateCamera(object_points, image_points1, image_size, None, None, flags=flags)
     stereo_flags = cv2.CALIB_FIX_INTRINSIC
