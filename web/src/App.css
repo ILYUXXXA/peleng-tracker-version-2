@@ -125,3 +125,17 @@ input:focus, select:focus { border-color: #69d7ff; box-shadow: 0 0 0 3px #69d7ff
 .phone-state.error { color: #ff8d8d; }
 .danger { width: 100%; border: 1px solid #713a40; border-radius: 8px; padding: 11px 14px; color: #ffd9dc; background: #351a1e; font-weight: 700; }
 @media (max-width: 650px) { .phone-card { grid-template-columns: 1fr; } .phone-preview, .phone-preview video { min-height: 52vh; } }
+
+
+.calibration-wizard { grid-column: 1 / -1; }
+.calibration-wizard h2 { margin-top: 4px; }
+.calibration-steps { display: grid; gap: 9px; padding-left: 22px; color: #aebfca; line-height: 1.5; }
+.calibration-wizard form { display: grid; gap: 12px; margin-top: 18px; }
+.calibration-wizard .camera-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.calibration-quality { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.calibration-quality div { padding: 12px; border: 1px solid #263c49; border-radius: 8px; background: #09141c; }
+.calibration-quality dt { color: #8296a4; font-size: 12px; }
+.calibration-quality dd { margin: 5px 0 0; color: #e5edf3; font-variant-numeric: tabular-nums; }
+.live-world-scene { position: relative; }
+.live-world-scene > .hint { position: absolute; right: 12px; bottom: 10px; left: 12px; padding: 9px 12px; border: 1px solid #304653; border-radius: 7px; background: #0b1720e8; }
+@media (max-width: 650px) { .calibration-quality { grid-template-columns: repeat(2, minmax(0, 1fr)); } .calibration-wizard .camera-fields { grid-template-columns: 1fr; } }
