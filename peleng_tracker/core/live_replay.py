@@ -83,7 +83,7 @@ class LiveReplayRecorder:
             if max(times) - min(times) > 0.15:
                 return
             timestamp = max(0.0, max(times) - min(self._started_at, min(times)))
-            if self._frame_index and timestamp <= self._last_timestamp:
+            if self._frame_index and (timestamp <= self._last_timestamp or timestamp - self._last_timestamp < 0.125):
                 return
             for camera_id in self._camera_ids:
                 frame = frames[camera_id]
