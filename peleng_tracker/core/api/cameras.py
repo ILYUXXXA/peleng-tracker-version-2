@@ -221,10 +221,10 @@ async def phone_cameras_mjpeg() -> StreamingResponse:
                     ok, encoded = cv2.imencode(".jpg", canvas, [cv2.IMWRITE_JPEG_QUALITY, 80])
                     if ok:
                         yield (
-                            b"--frame\\r\\nContent-Type: image/jpeg\\r\\n"
-                            b"Cache-Control: no-cache\\r\\n\\r\\n"
+                            b"--frame\r\nContent-Type: image/jpeg\r\n"
+                            b"Cache-Control: no-cache\r\n\r\n"
                             + encoded.tobytes()
-                            + b"\\r\\n"
+                            + b"\r\n"
                         )
             await asyncio.sleep(0.05)
 
