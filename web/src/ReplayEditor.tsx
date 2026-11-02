@@ -145,7 +145,55 @@ export default function ReplayEditor() {
   const [time, setTime] = useState(0)
   const [speed, setSpeed] = useState(1)
   const [playing, setPlaying] = useState(false)
+  const [recording, setRecording] = useState(false)
+  const [recordingBusy, setRecordingBusy] = useState(false)
+  const [recordingMessage, setRecordingMessage] = useState('')
   const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  useEffect(() => {
+    fetch('/api/replay/record/status').then(response => response.ok ? response.json() : null)
+      .then(status => setRecording(Boolean(status?.recording))).catch(() => undefined)
+  }, [])
+
+  const startRecording = async () => {
+    setRecordingBusy(true)
+    setRecordingMessage('')
+    try {
+      const response = await fetch('/api/replay/record/start', { method: 'POST' })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.detail || 'Не удалось начать запись')
+      setRecording(true)
+      setRecordingMessage('Запись запущена. Не закрывайте страницу; камеры должны оставаться подключёнными.')
+    } catch (reason) {
+      setRecordingMessage(reason instanceof Error ? reason.message : 'Ошибка записи')
+    } finally {
+      setRecordingBusy(false)
+    }
+  }
+
+  const stopRecording = async () => {
+    setRecordingBusy(true)
+    setRecordingMessage('')
+    try {
+      const response = await fetch('/api/replay/record/stop', { method: 'POST' })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.detail || 'Не удалось обработать запись')
+      setRecording(false)
+      setRecordingMessage(`Сессия ${payload.session_id}: ${payload.states} точек 3D-траектории`)
+      window.location.reload()
+    } catch (reason) {
+      setRecordingMessage(reason instanceof Error ? reason.message : 'Ошибка обработки записи')
+    } finally {
+      setRecordingBusy(false)
+    }
+  }
+
+  const recordingControls = <div className="replay-actions">
+    {recording
+      ? <button type="button" disabled={recordingBusy} onClick={stopRecording}>{recordingBusy ? 'Обработка…' : 'Остановить и обработать'}</button>
+      : <button type="button" disabled={recordingBusy} onClick={startRecording}>{recordingBusy ? 'Запуск…' : 'Записать реальную сцену'}</button>}
+    {recordingMessage && <span role="status">{recordingMessage}</span>}
+  </div>
 
   useEffect(() => {
     Promise.all([
@@ -206,13 +254,13 @@ export default function ReplayEditor() {
     } else video.pause()
   }
 
-  if (error) return <section className="panel replay-empty"><p className="eyebrow">3D Replay</p><h2>Нет обработанной записи</h2><p>{error}</p><code>uv run peleng-tracker demo run demo/&lt;bundle&gt;</code></section>
+  if (error) return <section className="panel replay-empty"><p className="eyebrow">3D Replay</p><h2>Нет обработанной записи</h2><p>{error}</p>{recordingControls}<p>Запись работает с двумя подключёнными и откалиброванными камерами. Для 3D нужны синхронные наблюдения одного человека с обеих камер.</p></section>
   if (!info) return <section className="panel replay-empty"><p>Загружаем 3D-траекторию…</p></section>
 
   return <main className="replay-editor">
     <header className="panel replay-header">
       <div><p className="eyebrow">Processed 3D · {info.manifest.observation_source}</p><h2>{info.manifest.title}</h2></div>
-      <div className="replay-actions"><a href="/api/replay/export.csv">CSV</a><a href="/api/replay/export.json">JSON</a></div>
+      <div className="replay-actions"><a href="/api/replay/export.csv">CSV</a><a href="/api/replay/export.json">JSON</a>{recordingControls}</div>
     </header>
     <section className="panel scene-panel">
       <div className="section-title"><div><p className="eyebrow">Metric world space</p><h2>3D-траектория</h2></div><span>мышь: вращение · колесо: масштаб</span></div>

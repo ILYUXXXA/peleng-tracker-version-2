@@ -549,6 +549,13 @@ class StreamCombinerTrack(VideoStreamTrack):
                 if result and vision_api.is_tracking_enabled():
                     if isinstance(result, VisionResult):
                         self.latest_vision_result = result
+                        from .live_replay import live_replay_recorder
+                        if live_replay_recorder.active:
+                            capture_times = {
+                                camera_id: self.last_capture_timestamps.get(camera_id, time.monotonic())
+                                for camera_id in frames
+                            }
+                            live_replay_recorder.append(frames, result, capture_times)
 
                 else:
                     logger.warning(f"⚠️ Vision processing returned None for frame {frame_id}")
