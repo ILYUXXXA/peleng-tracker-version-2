@@ -5,6 +5,7 @@ import type { WorldTrack } from './services/VisionWebSocket'
 function Marker({ track }: { track: WorldTrack }) {
   if (!track.position_xyz_m || track.position_status !== 'valid') return null
   const [x, y, z] = track.position_xyz_m
+  const trail = track.trajectory.map(point => [point[1], point[3], -point[2]] as [number, number, number])
   return <group position={[x, z, -y]}>
     <mesh>
       <sphereGeometry args={[track.is_target ? 0.14 : 0.09, 20, 16]} />
