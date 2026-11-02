@@ -139,3 +139,11 @@ input:focus, select:focus { border-color: #69d7ff; box-shadow: 0 0 0 3px #69d7ff
 .live-world-scene { position: relative; }
 .live-world-scene > .hint { position: absolute; right: 12px; bottom: 10px; left: 12px; padding: 9px 12px; border: 1px solid #304653; border-radius: 7px; background: #0b1720e8; }
 @media (max-width: 650px) { .calibration-quality { grid-template-columns: repeat(2, minmax(0, 1fr)); } .calibration-wizard .camera-fields { grid-template-columns: 1fr; } }
+
+.workflow-start { grid-column: 1 / -1; display: grid; gap: 14px; border-color: #315466; background: linear-gradient(135deg, #102431, #0b1720); }
+.workflow-start h2 { margin: 3px 0 6px; }
+.workflow-status, .workflow-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.workflow-status span { padding: 8px 11px; border-radius: 7px; background: #09141c; border: 1px solid #263c49; font-size: 13px; }
+.workflow-status .step-ready { color: #55d6a3; border-color: #24634f; }
+.workflow-status .step-pending { color: #f0c477; border-color: #66502a; }
+.workflow-actions button { flex: 1 1 240px; }
