@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 import csv
-import json
 import os
-import re
 import threading
 import time
 import uuid
@@ -30,7 +28,6 @@ class LiveReplayRecorder:
         self._frame_index = 0
         self._started_at = 0.0
         self._last_timestamp = 0.0
-        self._fps_samples: list[float] = []
         self._active = False
         self._last_summary: dict[str, Any] | None = None
 
@@ -70,7 +67,6 @@ class LiveReplayRecorder:
             self._frame_index = 0
             self._started_at = time.monotonic()
             self._last_timestamp = 0.0
-            self._fps_samples = []
             self._active = True
             (root / "calibration.yaml").write_text(
                 yaml.safe_dump(calibration, sort_keys=False), encoding="utf-8"
@@ -97,7 +93,7 @@ class LiveReplayRecorder:
                     self._camera_sizes[camera_id] = size
                     writer = cv2.VideoWriter(
                         str(self._root / f"camera-{camera_id}.mp4"),
-                        cv2.VideoWriter_fourcc(*"mp4v"), 30.0, size,
+                        cv2.VideoWriter_fourcc(*"mp4v"), 8.0, size,
                     )
                     if not writer.isOpened():
                         writer.release()
@@ -128,7 +124,6 @@ class LiveReplayRecorder:
                     })
             self._last_timestamp = timestamp
             self._frame_index += 1
-            self._fps_samples.append(timestamp)
 
     def stop(self) -> dict[str, Any]:
         with self._lock:
@@ -152,7 +147,7 @@ class LiveReplayRecorder:
                 ])
                 writer.writeheader()
                 writer.writerows(rows)
-            fps = 30.0
+            fps = 8.0
             duration = max(self._last_timestamp, self._frame_index / fps)
             manifest = {
                 "schema_version": 1, "id": root.name, "title": f"Live session {root.name}",
