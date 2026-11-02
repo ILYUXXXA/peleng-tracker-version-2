@@ -9,7 +9,7 @@ export function CalibrationWizard() {
   const [camera1, setCamera1] = useState('1')
   const [columns, setColumns] = useState('9')
   const [rows, setRows] = useState('6')
-  const [square, setSquare] = useState('0.025')
+  const [square, setSquare] = useState('0.05')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [result, setResult] = useState<CalibrationResult | null>(null)

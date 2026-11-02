@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { VisionWebSocketService, type VisionMetadata } from './services/VisionWebSocket'
 import { PhonePublisher } from './PhonePublisher'
@@ -6,9 +6,8 @@ import { LiveWorld3D } from './LiveWorld3D'
 import { CalibrationWizard } from './CalibrationWizard'
 import { COCO_CLASSES } from './cocoClasses'
 
-const ReplayEditor = lazy(() => import('./ReplayEditor'))
 
-type Screen = 'dashboard' | 'world' | 'replay' | 'settings'
+type Screen = 'dashboard' | 'world' | 'settings'
 type TargetDetails = {
   mode: 'class' | 'track'
   class_ids?: number[]
@@ -236,11 +235,26 @@ function DesktopApp() {
         <button className={`health ${status.enabled ? 'online' : ''}`} onClick={toggleVision}><span />{status.enabled ? 'Vision online' : 'Start vision'}</button>
       </header>
       <nav className="tabs" aria-label="Основные экраны">
-        {([['dashboard', 'Dashboard'], ['world', 'World View'], ['replay', '3D Replay'], ['settings', 'Calibration / Settings']] as const).map(([id, label]) =>
+        {([['dashboard', 'Dashboard'], ['world', 'World View'], ['settings', 'Calibration / Settings']] as const).map(([id, label]) =>
           <button key={id} className={screen === id ? 'active' : ''} onClick={() => setScreen(id)}>{label}</button>)}
       </nav>
 
       {screen === 'dashboard' && <main className="dashboard">
+        <section className="panel workflow-start">
+          <div><p className="eyebrow">Live 3D setup</p><h2>Запуск системы слежения</h2>
+            <p className="muted">Сначала подключите два телефона, затем откалибруйте стереопару. После этого откройте 3D-сцену.</p>
+          </div>
+          <div className="workflow-status">
+            <span className={cameras.filter(camera => camera.status === 'ready').length >= 2 ? 'step-ready' : 'step-pending'}>Камеры: {cameras.filter(camera => camera.status === 'ready').length}/2 подключены</span>
+            <span className={status.calibration.valid ? 'step-ready' : 'step-pending'}>Калибровка: {status.calibration.valid ? 'готова' : 'не выполнена'}</span>
+            <span className={status.enabled ? 'step-ready' : 'step-pending'}>Vision: {status.enabled ? 'запущен' : 'остановлен'}</span>
+          </div>
+          <div className="workflow-actions">
+            <button className="secondary" onClick={() => setScreen('settings')}>1. Подключить камеры и калибровать</button>
+            <button className="primary" disabled={!status.calibration.valid} onClick={() => setScreen('world')}>2. Открыть Live 3D</button>
+          </div>
+          {!status.calibration.valid && <p className="hint">Без корректной калибровки метрические 3D-координаты недоступны. Не считайте 2D-детекции полноценным 3D.</p>}
+        </section>
         <section className="video-panel panel">
           <div className="section-title"><div><p className="eyebrow">Live</p><h2>Объединённый поток</h2></div><span>{visibleCameraIds.length} камер</span></div>
           <div className="video-stage" style={{ aspectRatio: `${streamLayout.columns * cameraSize.width} / ${streamLayout.rows * cameraSize.height}` }}><img id="combined-video-main" src="/api/cameras/phone/mjpeg" alt="Объединённый поток с телефонных камер" /><div className="video-empty hidden" />
@@ -306,7 +320,6 @@ function DesktopApp() {
         <section className="panel world-cards">{visibleWorldTracks.map(track => <article key={track.global_id}><strong>{track.global_id}</strong><span>{track.class_name}</span><code>{track.position_xyz_m ? track.position_xyz_m.map(v => v.toFixed(2)).join(', ') : 'unavailable'}</code><small>{track.position_status} · {track.source_track_keys.join(' + ')}</small></article>)}{!visibleWorldTracks.length && <p className="muted">Нет мировых треков.</p>}</section>
       </main>}
 
-      {screen === 'replay' && <Suspense fallback={<section className="panel replay-empty"><p>Загружаем 3D-редактор…</p></section>}><ReplayEditor /></Suspense>}
 
       {screen === 'settings' && <main className="settings-layout">
         <section className="panel"><p className="eyebrow">Controlled restart</p><h2>Модель и трекер</h2>

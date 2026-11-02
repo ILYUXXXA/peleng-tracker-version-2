@@ -67,7 +67,7 @@ async def calibrate_stereo_checkerboard(
     camera1_id: int = Form(1, ge=0),
     columns: int = Form(9, ge=4, le=20),
     rows: int = Form(6, ge=4, le=20),
-    square_size_m: float = Form(0.025, gt=0.001, le=0.5),
+    square_size_m: float = Form(0.05, gt=0.001, le=0.5),
 ) -> dict[str, Any]:
     """Calibrate a synchronized stereo pair from corresponding checkerboard image pairs."""
     if vision_api is None:
