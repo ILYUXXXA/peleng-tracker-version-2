@@ -1,7 +1,22 @@
 vision:
-  detector: {backend: ultralytics, weights: yolo26n.pt, confidence: 0.25, iou: 0.7, device: auto, image_size: 640}
-  tracker: {backend: botsort}
-  geometry: {mode: auto, calibration_file: config/calibration.yaml, max_sync_skew_ms: 50, max_reprojection_error_px: 5, max_ground_distance_m: 1.5}
+  detector:
+    backend: ultralytics
+    weights: yolo26n.pt
+    confidence: 0.4
+    iou: 0.6
+    device: auto
+    image_size: 960
+    class_ids: [0]  # COCO person only
+  tracker:
+    backend: botsort
+    max_age: 30
+    min_hits: 2
+  geometry:
+    mode: auto
+    calibration_file: config/calibration.yaml
+    max_sync_skew_ms: 50
+    max_reprojection_error_px: 5
+    max_ground_distance_m: 1.5
   fps: 10
 cameras: []
 server: {host: 0.0.0.0, port: 8000, open_browser: false}

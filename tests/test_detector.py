@@ -27,16 +27,28 @@ class Result:
 
 
 class Model:
+    def __init__(self):
+        self.last_kwargs = None
+
     def predict(self, **kwargs):
-        assert kwargs["classes"] == [2]
+        self.last_kwargs = kwargs
         return [Result()]
 
 
 def test_ultralytics_adapter_converts_xyxy_and_keeps_class() -> None:
     settings = DetectorSettings(weights="custom.pt", class_ids=[2])
-    detections = UltralyticsDetector(settings, model=Model()).detect(np.zeros((100, 100, 3), dtype=np.uint8))
+    model = Model()
+    detections = UltralyticsDetector(settings, model=model).detect(np.zeros((100, 100, 3), dtype=np.uint8))
+    assert model.last_kwargs["classes"] == [2]
     assert detections[0].bbox == (10, 20, 40, 60)
     assert (detections[0].class_id, detections[0].class_name) == (2, "car")
+
+
+def test_default_detector_is_person_only() -> None:
+    settings = DetectorSettings()
+    assert settings.class_ids == [0]
+    assert settings.confidence == 0.4
+    assert settings.image_size == 960
 
 
 def test_empty_result() -> None:
