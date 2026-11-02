@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { VisionWebSocketService, type VisionMetadata } from './services/VisionWebSocket'
-import { WebRTCManager, type WebRTCState } from './services/WebRTCManager'
 import { PhonePublisher } from './PhonePublisher'
 import { COCO_CLASSES } from './cocoClasses'
 
@@ -58,10 +57,6 @@ function DesktopApp() {
   const [cameras, setCameras] = useState<Camera[]>([])
   const [cameraForm, setCameraForm] = useState({ id: '0', name: 'iPhone RTSP', url: '' })
   const [cameraSize, setCameraSize] = useState({ width: 720, height: 480 })
-  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null)
-  const [webrtcState, setWebRTCState] = useState<WebRTCState>('connecting')
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const webrtc = useRef<WebRTCManager | null>(null)
 
   const refreshStatus = async (syncConfig = false) => {
     const response = await fetch('/api/vision/status')
@@ -93,28 +88,12 @@ function DesktopApp() {
       }
     }
     vision.connect()
-    const rtc = new WebRTCManager(setMediaStream, setWebRTCState)
-    rtc.connect()
-    webrtc.current = rtc
-    const timer = window.setTimeout(() => rtc.startCombinedStream().catch(() => undefined), 300)
     const statusTimer = window.setInterval(() => refreshStatus().catch(() => undefined), 1000)
     return () => {
-      window.clearTimeout(timer)
       window.clearInterval(statusTimer)
       vision.disconnect()
-      rtc.disconnect()
     }
   }, [])
-
-  useEffect(() => {
-    const video = videoRef.current
-    if (screen !== 'dashboard' || !video || !mediaStream) return
-    video.srcObject = mediaStream
-    video.play().catch(() => setWebRTCState('failed'))
-    return () => {
-      if (video.srcObject === mediaStream) video.srcObject = null
-    }
-  }, [mediaStream, screen])
 
   const tracks = useMemo(
     () => Object.entries(metadata?.all_streams ?? {}).flatMap(([cameraId, stream]) =>
@@ -255,7 +234,7 @@ function DesktopApp() {
       {screen === 'dashboard' && <main className="dashboard">
         <section className="video-panel panel">
           <div className="section-title"><div><p className="eyebrow">Live</p><h2>Объединённый поток</h2></div><span>{metadata?.active_stream_ids.length ?? 0} камер</span></div>
-          <div className="video-stage" style={{ aspectRatio: `${streamLayout.columns * cameraSize.width} / ${streamLayout.rows * cameraSize.height}` }}><video ref={videoRef} id="combined-video-main" autoPlay playsInline muted onPlaying={() => setWebRTCState('playing')} /><div className={`video-empty ${webrtcState === 'playing' ? 'hidden' : ''}`}>{webrtcState === 'failed' ? 'Ошибка WebRTC — обновите страницу' : webrtcState === 'disconnected' ? 'WebRTC отключён' : 'Подключаем WebRTC-поток…'}</div>
+          <div className="video-stage" style={{ aspectRatio: `${streamLayout.columns * cameraSize.width} / ${streamLayout.rows * cameraSize.height}` }}><img id="combined-video-main" src="/api/cameras/phone/mjpeg" alt="Объединённый поток с телефонных камер" /><div className="video-empty hidden" />
             <div className="box-overlay">{tracks.map(track => {
               const cameraIds = metadata?.active_stream_ids ?? []
               const index = Math.max(0, cameraIds.indexOf(track.cameraId))
