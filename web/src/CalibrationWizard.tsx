@@ -32,7 +32,7 @@ export function CalibrationWizard() {
     }
     setBusy(true); setMessage('Идёт калибровка. Не закрывайте страницу…'); setResult(null)
     try {
-      const response = await fetch('/api/calibration/3d/charuco', { method: 'POST', body: data })
+      const response = await fetch('/api/calibration/3d/checkerboard', { method: 'POST', body: data })
       const payload = await response.json() as CalibrationResult & { detail?: string; status?: CalibrationState['status'] }
       if (!response.ok) throw new Error(payload.detail ?? 'Калибровка завершилась ошибкой')
       setResult(payload); if (payload.status) setStatus(payload.status)
