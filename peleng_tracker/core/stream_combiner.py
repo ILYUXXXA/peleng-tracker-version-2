@@ -779,6 +779,7 @@ class StreamCombinerManager:
         track = self.get_video_track()
         frames: dict[int, np.ndarray] = {}
         latest_sequence = 0
+        changed = False
         now = time.monotonic()
         for stream in ServerConfig.get_enabled_streams():
             if not str(stream.get("url", "")).startswith("phone://"):
@@ -787,14 +788,13 @@ class StreamCombinerManager:
             packet = phone_frames.get(camera_id)
             if packet is None or now - packet.captured_at > 2.0:
                 continue
-            if self._vision_phone_sequences.get(camera_id) == packet.sequence:
-                continue
+            changed = changed or self._vision_phone_sequences.get(camera_id) != packet.sequence
             frames[camera_id] = packet.frame
             track.last_capture_timestamps[camera_id] = packet.captured_at
             track.stream_status[camera_id] = "ready"
             self._vision_phone_sequences[camera_id] = packet.sequence
             latest_sequence = max(latest_sequence, packet.sequence)
-        if frames:
+        if changed and frames:
             await track._process_frame_vision(frames, latest_sequence)
 
     def register_phone_camera(self, camera_id: int, name: str) -> None:
