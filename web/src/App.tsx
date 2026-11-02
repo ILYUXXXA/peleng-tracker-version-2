@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { VisionWebSocketService, type VisionMetadata } from './services/VisionWebSocket'
 import { PhonePublisher } from './PhonePublisher'
