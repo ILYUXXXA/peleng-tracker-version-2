@@ -96,7 +96,9 @@ export function CalibrationWizard() {
       <label>Сторона клетки, метры<input name="square_size_m" type="number" min="0.002" max="0.5" step="0.001" value={square} onChange={event => setSquare(event.target.value)} required /></label>
       <label>Дополнительные файлы камеры A<input name="camera0_images" type="file" accept="image/*" multiple /></label>
       <label>Дополнительные файлы камеры B в том же порядке<input name="camera1_images" type="file" accept="image/*" multiple /></label>
-      <button className="secondary" type="button" disabled={busy || capturing || camera0 === camera1} onClick={capturePair}>Снять синхронную пару с телефонов ({captured0.length}/12)</button>\n      <p className="hint">Можно снимать пары прямо из работающих видеопотоков. После каждой пары перемещайте доску; нужно минимум 12 разных поз. Текущие кадры должны отличаться по времени не более чем на 150 мс.</p>\n      <button className="primary" type="submit" disabled={busy}>{busy ? 'Калибруем…' : 'Вычислить и сохранить калибровку'}</button>
+      <button className="secondary" type="button" disabled={busy || capturing || camera0 === camera1} onClick={capturePair}>Снять синхронную пару с телефонов ({captured0.length}/12)</button>
+      <p className="hint">Можно снимать пары прямо из работающих видеопотоков. После каждой пары перемещайте доску; нужно минимум 12 разных поз. Текущие кадры должны отличаться по времени не более чем на 150 мс.</p>
+      <button className="primary" type="submit" disabled={busy}>{busy ? 'Калибруем…' : 'Вычислить и сохранить калибровку'}</button>
     </form>
     {message && <p className="notice" aria-live="polite">{message}</p>}
     {result && <dl className="calibration-quality">
