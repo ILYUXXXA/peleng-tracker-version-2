@@ -8,6 +8,9 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
 from ...replay import ReplayBundle, replay_repository
+from ...core.live_replay import live_replay_recorder
+from . import calibration as calibration_api
+from ..config import ServerConfig
 
 router = APIRouter()
 
@@ -65,3 +68,32 @@ async def replay_export_json() -> JSONResponse:
         bundle.trajectory.model_dump(mode="json"),
         headers={"Content-Disposition": f'attachment; filename="{bundle.manifest.id}-trajectory.json"'},
     )
+
+
+@router.get("/record/status")
+async def replay_record_status() -> dict[str, object]:
+    return live_replay_recorder.status()
+
+
+@router.post("/record/start")
+async def replay_record_start() -> dict[str, object]:
+    api = calibration_api.vision_api
+    if api is None:
+        raise HTTPException(status_code=503, detail="vision pipeline is not initialized")
+    if not api.is_tracking_enabled():
+        raise HTTPException(status_code=409, detail="Enable vision tracking before recording")
+    try:
+        calibration = api.calibration_document().model_dump(mode="json")
+        return live_replay_recorder.start(calibration, ServerConfig.get_enabled_streams())
+    except (ValueError, RuntimeError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.post("/record/stop")
+async def replay_record_stop() -> dict[str, object]:
+    try:
+        return live_replay_recorder.stop()
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=422, detail=f"Replay processing failed: {error}") from error
