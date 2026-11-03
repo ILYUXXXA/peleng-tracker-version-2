@@ -21,6 +21,10 @@ cd web && npm ci && npm run build && cd ..
 
 Dashboard откроется на `http://127.0.0.1:8000`. При первом запуске Ultralytics может скачать выбранные веса. Для запуска vision нажмите `Start vision` после подключения потоков.
 
+## Датасет Space Hackathon / обучение YOLO
+
+Инструкции по разметке Unreal-видео, обучению с аугментацией, валидации и запуску пяти камер на Windows: [docs/PELANG_UNREAL_TRAINING.md](docs/PELANG_UNREAL_TRAINING.md). Для запуска пяти MP4 как RTSP-потоков используйте `scripts/offline-demo-peleng.ps1` и `config/peleng-unreal.example.yaml`.
+
 ## Камеры
 
 Скопируйте `config/hackathon.example.yaml` в локальный `config/hackathon.local.yaml` и добавьте камеры. RTSP URL рекомендуется передавать через environment variables:

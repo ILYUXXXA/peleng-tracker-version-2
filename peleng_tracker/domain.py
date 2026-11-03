@@ -66,8 +66,13 @@ class Track:
 
     @property
     def geometry_anchor(self) -> tuple[float, float]:
-        """Use a ground-contact observation for people and the center otherwise."""
-        return self.ground_anchor if self.class_id == 0 else self.bbox_center
+        """Use ground contact for people, but bbox center for custom classes.
+
+        Class IDs are model-specific: class 0 is person in COCO weights but can
+        be target in a one-class custom model. Keying this decision on class_id
+        alone silently used the bottom edge for custom class 0.
+        """
+        return self.ground_anchor if self.class_name.strip().lower() in {"person", "human"} else self.bbox_center
 
 
 PositionStatus = Literal["valid", "planar_fallback", "unavailable"]
@@ -106,33 +111,3 @@ class WorldTrack:
     trajectory: list[tuple[float, float, float, float]] = field(default_factory=list)
     source_track_keys: list[str] = field(default_factory=list)
     association_pairs: list[AssociationPair] = field(default_factory=list)
-
-
-@dataclass(slots=True)
-class VisionResult:
-    frame_id: int
-    timestamp: float
-    processing_time_ms: float
-    active_stream_ids: list[int]
-    detections: dict[int, list[Detection]]
-    tracks: dict[int, list[Track]]
-    world_tracks: list[WorldTrack]
-    sync_skew_ms: float = 0.0
-    association_diagnostics: AssociationDiagnostics = field(default_factory=AssociationDiagnostics)
-
-    @property
-    def num_streams(self) -> int:
-        return len(self.active_stream_ids)
-
-    @property
-    def all_stream_detections(self) -> dict[int, list[Detection]]:
-        return self.detections
-
-    @property
-    def all_stream_tracks(self) -> dict[int, list[Track]]:
-        return self.tracks
-
-    @property
-    def bev_tracks(self) -> list[WorldTrack]:
-        """Temporary compatibility alias for schema v1 clients."""
-        return self.world_tracks

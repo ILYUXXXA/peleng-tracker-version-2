@@ -1,0 +1,34 @@
+vision:
+  detector:
+    backend: ultralytics
+    weights: runs/peleng/yolo11n-peleng/weights/best.pt
+    confidence: 0.15
+    iou: 0.7
+    device: auto
+    image_size: 960
+    class_ids: [0]
+  tracker:
+    backend: botsort
+    max_age: 30
+    min_hits: 1
+    matching_threshold: 0.3
+    with_reid: false
+  geometry:
+    mode: 3d
+    calibration_file: data/peleng-yolo/calibration.yaml
+    max_sync_skew_ms: 150
+    max_reprojection_error_px: 25
+    max_ground_distance_m: 2.5
+  fps: 10
+
+cameras:
+  - {id: 0, name: unreal-camera-1, url: "rtsp://127.0.0.1:8554/camera0", enabled: true}
+  - {id: 1, name: unreal-camera-2, url: "rtsp://127.0.0.1:8554/camera1", enabled: true}
+  - {id: 2, name: unreal-camera-3, url: "rtsp://127.0.0.1:8554/camera2", enabled: true}
+  - {id: 3, name: unreal-camera-4, url: "rtsp://127.0.0.1:8554/camera3", enabled: true}
+  - {id: 4, name: unreal-camera-5, url: "rtsp://127.0.0.1:8554/camera4", enabled: true}
+
+server:
+  host: 127.0.0.1
+  port: 8000
+  open_browser: false
