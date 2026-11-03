@@ -49,7 +49,7 @@ The command creates images/train and images/val, YOLO labels, data.yaml, labels_
 Open several images in data/peleng-yolo/review. If boxes are consistently too long/short/tall, regenerate with adjusted dimensions:
 
 ~~~powershell
-uv run python scripts/peleng_ml.py prepare --source data/peleng-source --output data/peleng-yolo --stride 2 --length 2.8 --width 0.75 --height 0.85 --overwrite
+uv run python scripts/peleng_ml.py prepare --source data/peleng-source --output data/peleng-yolo --stride 2 --object-length-m 2.8 --object-width-m 0.75 --object-height-m 0.85 --overwrite
 ~~~
 
 If motion filtering removes too many valid frames, lower --min-motion-pixels or try --no-motion-filter; then manually inspect labels because occluded objects can receive incorrect boxes. Do not train until the review looks reasonable.
