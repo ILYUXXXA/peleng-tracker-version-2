@@ -59,6 +59,16 @@ class Camera:
             return None
         return self.cx + self.fx * np.dot(d, self.right) / z, self.cy - self.fy * np.dot(d, self.up) / z, z / 1000
 
+    def projection_matrix(self):
+        center = np.array([self.pos[0], -self.pos[1], self.pos[2]], dtype=float) / 1000
+        forward = np.array([self.fwd[0], -self.fwd[1], self.fwd[2]])
+        right = np.array([self.right[0], -self.right[1], self.right[2]])
+        up = np.array([self.up[0], -self.up[1], self.up[2]])
+        rotation = np.vstack([right, -up, forward])
+        translation = -rotation @ center
+        intrinsic = np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=float)
+        return intrinsic @ np.column_stack([rotation, translation])
+
     def cuboid_box(self, point: np.ndarray, heading: np.ndarray, length: float, width: float, height: float):
         norm = np.linalg.norm(heading)
         if norm < 1e-6:
@@ -216,6 +226,20 @@ def train(args):
     print(f"Best weights: {Path(args.project) / args.name / 'weights' / 'best.pt'}")
 
 
+def triangulate(observations):
+    rows = []
+    for camera, u, v in observations:
+        projection = camera.projection_matrix()
+        rows.extend([u * projection[2] - projection[0], v * projection[2] - projection[1]])
+    if len(rows) < 4:
+        return None
+    _, _, vh = np.linalg.svd(np.asarray(rows))
+    homogeneous = vh[-1]
+    if abs(homogeneous[3]) < 1e-12:
+        return None
+    return homogeneous[:3] / homogeneous[3]
+
+
 def validate(args):
     from ultralytics import YOLO
     source = Path(args.source).resolve()
@@ -223,6 +247,7 @@ def validate(args):
     model = YOLO(args.weights)
     output = Path(args.output).resolve(); output.mkdir(parents=True, exist_ok=True)
     rows_out, per_camera = [], {}
+    observations_by_frame = {}
     for cid, video in videos.items():
         cap = cv2.VideoCapture(str(video)); frame_id = -1; errors = []; eligible = found = 0
         while True:
@@ -249,7 +274,11 @@ def validate(args):
             found += int(ok_det)
             if err is not None: errors.append(err)
             rows_out.append({"camera_id":cid,"frame_index":frame_id,"detected":int(ok_det),"pixel_error":err,
-                             "confidence":candidates[0][1] if ok_det else 0})
+                             "confidence":candidates[0][1] if ok_det else 0,
+                             "pred_u":candidates[0][2] if ok_det else None,
+                             "pred_v":candidates[0][3] if ok_det else None})
+            if ok_det:
+                observations_by_frame.setdefault(frame_id, []).append((cameras[cid], candidates[0][2], candidates[0][3]))
         cap.release()
         per_camera[cid]={"eligible_frames":eligible,"detected_frames":found,
             "recall_at_match_radius":found/eligible if eligible else None,
@@ -257,12 +286,40 @@ def validate(args):
             "p95_pixel_error":float(np.percentile(errors,95)) if errors else None}
         print(f"camera {cid}: {per_camera[cid]}")
     with (output / "detections.csv").open("w",newline="",encoding="utf-8") as f:
-        writer=csv.DictWriter(f,fieldnames=["camera_id","frame_index","detected","pixel_error","confidence"])
+        writer=csv.DictWriter(f,fieldnames=["camera_id","frame_index","detected","pixel_error","confidence","pred_u","pred_v"])
         writer.writeheader(); writer.writerows(rows_out)
+    xyz_errors, xyz_rows = [], []
+    for frame_id, observations in observations_by_frame.items():
+        if len(observations) < 2 or frame_id - 1 not in target or frame_id + 1 not in target:
+            continue
+        reconstructed = triangulate(observations)
+        if reconstructed is None:
+            continue
+        heading = target[frame_id + 1][:2] - target[frame_id - 1][:2]
+        norm = np.linalg.norm(heading)
+        if norm < 1e-6:
+            continue
+        heading = heading / norm
+        # The target transform is near the truck's front-center; compare with the estimated mesh center.
+        center = target[frame_id].copy()
+        center[:2] -= heading * args.length * 500
+        gt = np.array([center[0], -center[1], center[2]]) / 1000
+        error = float(np.linalg.norm(reconstructed - gt))
+        xyz_errors.append(error)
+        xyz_rows.append({"frame_index":frame_id,"x_pred_m":reconstructed[0],"y_pred_m":reconstructed[1],
+                         "z_pred_m":reconstructed[2],"x_gt_m":gt[0],"y_gt_m":gt[1],"z_gt_m":gt[2],
+                         "error_3d_m":error,"camera_count":len(observations)})
+    with (output / "triangulation_errors.csv").open("w",newline="",encoding="utf-8") as f:
+        fields = list(xyz_rows[0]) if xyz_rows else ["frame_index","error_3d_m"]
+        writer=csv.DictWriter(f,fieldnames=fields); writer.writeheader(); writer.writerows(xyz_rows)
     report={"weights":str(Path(args.weights).resolve()),"per_camera":per_camera,
         "eligible_frames":len(rows_out),"detections":sum(r["detected"] for r in rows_out),
         "recall_at_match_radius":sum(r["detected"] for r in rows_out)/len(rows_out) if rows_out else None,
-        "note":"This is GT-projection-assisted 2D validation, not blind end-to-end tracking. Ultralytics training also reports val precision/recall/mAP."}
+        "3d_valid_frames":len(xyz_errors),
+        "3d_rmse_m":float(np.sqrt(np.mean(np.square(xyz_errors)))) if xyz_errors else None,
+        "3d_mae_m":float(np.mean(xyz_errors)) if xyz_errors else None,
+        "3d_p95_error_m":float(np.percentile(xyz_errors,95)) if xyz_errors else None,
+        "note":"GT-projection-assisted association is used only for offline evaluation. 3D errors are conditional on detections in at least two cameras; the mesh-center comparison assumes the trajectory marks the truck front-center and uses the configured length."}
     (output / "validation_report.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
     print(json.dumps(report,indent=2))
 
