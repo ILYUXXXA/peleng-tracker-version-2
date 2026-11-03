@@ -332,7 +332,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__); sub=p.add_subparsers(dest="cmd",required=True)
     a=sub.add_parser("prepare"); a.add_argument("--source",required=True); a.add_argument("--output",default="data/peleng-yolo")
     a.add_argument("--stride",type=int,default=2); a.add_argument("--train-fraction",type=float,default=.8)
-    a.add_argument("--length",type=float,default=2.5); a.add_argument("--width",type=float,default=.7); a.add_argument("--height",type=float,default=.8)
+    a.add_argument("--length","--object-length-m",dest="length",type=float,default=2.5); a.add_argument("--width","--object-width-m",dest="width",type=float,default=.7); a.add_argument("--height","--object-height-m",dest="height",type=float,default=.8)
     a.add_argument("--motion-filter",dest="motion_filter",action="store_true",default=True); a.add_argument("--no-motion-filter",dest="motion_filter",action="store_false")
     a.add_argument("--motion-lag",type=int,default=5); a.add_argument("--diff-threshold",type=int,default=18); a.add_argument("--min-motion-pixels",type=int,default=35)
     a.add_argument("--review-per-camera",type=int,default=8); a.add_argument("--overwrite",action="store_true"); a.set_defaults(func=prepare)
@@ -343,7 +343,7 @@ def main():
     c=sub.add_parser("validate"); c.add_argument("--source",required=True); c.add_argument("--weights",required=True); c.add_argument("--output",default="runs/peleng/validation")
     c.add_argument("--stride",type=int,default=5); c.add_argument("--imgsz",type=int,default=960); c.add_argument("--conf",type=float,default=.15)
     c.add_argument("--iou",type=float,default=.7); c.add_argument("--device",default="auto"); c.add_argument("--match-radius",type=float,default=120)
-    c.add_argument("--length",type=float,default=2.5); c.add_argument("--width",type=float,default=.7); c.add_argument("--height",type=float,default=.8); c.set_defaults(func=validate)
+    c.add_argument("--length","--object-length-m",dest="length",type=float,default=2.5); c.add_argument("--width","--object-width-m",dest="width",type=float,default=.7); c.add_argument("--height","--object-height-m",dest="height",type=float,default=.8); c.set_defaults(func=validate)
     args=p.parse_args(); args.func(args)
 
 
