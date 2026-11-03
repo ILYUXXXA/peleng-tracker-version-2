@@ -174,13 +174,15 @@ def prepare(args):
             old = next((im for fi, im in reversed(lag) if fi == i - args.motion_lag), None)
             score = 0
             if old is not None:
-                diff = cv2.GaussianBlur(cv2.absdiff(old, gray), (5, 5), 0)
-                _, mask = cv2.threshold(diff, args.diff_threshold, 255, cv2.THRESH_BINARY)
-                mask = cv2.dilate(mask, np.ones((3, 3), np.uint8), iterations=1)
                 u, v, bw, bh = box
                 x1, x2 = max(0, int(u - bw * 0.75)), min(W, int(u + bw * 0.75))
                 y1, y2 = max(0, int(v - bh * 0.75)), min(H, int(v + bh * 0.75))
-                score = int(np.count_nonzero(mask[y1:y2, x1:x2]))
+                # Crop before frame differencing; processing all 1080p pixels per sample is wasteful.
+                old_roi, current_roi = old[y1:y2, x1:x2], gray[y1:y2, x1:x2]
+                diff = cv2.GaussianBlur(cv2.absdiff(old_roi, current_roi), (5, 5), 0)
+                _, mask = cv2.threshold(diff, args.diff_threshold, 255, cv2.THRESH_BINARY)
+                mask = cv2.dilate(mask, np.ones((3, 3), np.uint8), iterations=1)
+                score = int(np.count_nonzero(mask))
             if args.motion_filter and score < args.min_motion_pixels:
                 rejected += 1
                 continue
@@ -188,7 +190,9 @@ def prepare(args):
             stem = f"cam{cid}_frame{i:04d}"
             image = output / "images" / split / f"{stem}.jpg"
             label = output / "labels" / split / f"{stem}.txt"
-            cv2.imwrite(str(image), frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+            # Resize training images to 1280x720; normalized YOLO labels remain valid.
+            training_frame = cv2.resize(frame, (1280, 720), interpolation=cv2.INTER_AREA)
+            cv2.imwrite(str(image), training_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
             u, v, bw, bh = box
             label.write_text(f"0 {u/W:.8f} {v/H:.8f} {bw/W:.8f} {bh/H:.8f}\n", encoding="utf-8")
             manifest.append([cid, i, split, u, v, bw, bh, score, image.relative_to(output).as_posix()])
